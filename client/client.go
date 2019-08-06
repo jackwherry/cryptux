@@ -16,8 +16,8 @@ import (
 )
 
 // example command line: ./client -id 88226 -pass 88377671 [-server v.snazz.xyz]
-var room = flag.Int("id", -1, "chat ID number (leave blank for new room)")
-var passcode = flag.String("pass", "", "secret key for chat encryption")
+var room = flag.String("id", "", "unique ID for your chat room")
+var passcode = flag.String("pass", "", "secret key for chat encryption (also must be the same as the other users)")
 var server = flag.String("server", "v.snazz.xyz", "hostname or IP address of cryptux server")
 
 // using a single salt for all applications allows for known-plaintext attacks, right?
@@ -60,14 +60,16 @@ func decryptMessage(ciphertext []byte, key [32]byte) (string, error) {
 func main() {
 	flag.Parse()
 	if *passcode == "" {
-		fmt.Println("Please provide a passcode (secret key) to encrypt your session.")
-		fmt.Println("Run ./client -pass=<password>.")
+		fmt.Println("Usage: ")
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
 	fmt.Println("Welcome to cryptux.")
-	if *room == -1 {
-		fmt.Println("You have not specified a chat ID number, so we'll open a new chat.")
+	if *room == "" {
+		fmt.Println("Usage: ")
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 	key := generateKey(*passcode)
 	encrypted := encryptMessage("Hey there!", key)
