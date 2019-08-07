@@ -28,7 +28,7 @@ func GetLastMessageEndpoint(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	fmt.Fprint(w, "room not found")
+	fmt.Fprint(w, "")
 }
 
 // PostMessageOrCreateRoom posts a message and/or creates a room

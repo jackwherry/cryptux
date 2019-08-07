@@ -1,15 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"os"
-
-	// "io/ioutil"
-	// "net/http"
+	"bufio"
+	"bytes"
 	"crypto/rand"
 	"errors"
 	"flag"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"time"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/nacl/secretbox"
@@ -48,6 +50,9 @@ func encryptMessage(message string, key [32]byte) []byte {
 }
 
 func decryptMessage(ciphertext []byte, key [32]byte) (string, error) {
+	if len(ciphertext) <= 24 {
+		return "", errors.New("ciphertext too short to contain nonce and data")
+	}
 	var decryptNonce [24]byte
 	copy(decryptNonce[:], ciphertext[:24]) // nonce is first 24 bytes of ciphertext
 	decrypted, ok := secretbox.Open(nil, ciphertext[24:], &decryptNonce, &key)
@@ -55,6 +60,38 @@ func decryptMessage(ciphertext []byte, key [32]byte) (string, error) {
 		return "", errors.New("could not decrypt message")
 	}
 	return string(decrypted), nil
+}
+
+var lastMessage []byte
+
+func getMessagesFromServer(key [32]byte) {
+	for {
+		response, err := http.Get("http://" + *server + ":8000/rooms/" + *room)
+		if err != nil {
+			fmt.Printf("The HTTP request to the server failed: %s \n ", err)
+		} else {
+			data, _ := ioutil.ReadAll(response.Body)
+			decrypted, err := decryptMessage(data, key)
+			if !(bytes.Equal(data, lastMessage)) {
+				if err != nil {
+					fmt.Println("A message has been sent, but you don't have the correct key to decrypt it.")
+				} else {
+					fmt.Println(decrypted)
+				}
+			}
+			lastMessage = data
+		}
+		time.Sleep(75 * time.Millisecond)
+	}
+}
+
+func sendMessageToServer(message string, key [32]byte) {
+	ciphertext := encryptMessage(message, key)
+	_, err := http.Post("http://"+*server+":8000/rooms/"+*room, "application/data", bytes.NewBuffer(ciphertext))
+	if err != nil {
+		fmt.Println("Could not send message.")
+	}
+
 }
 
 func main() {
@@ -76,4 +113,13 @@ func main() {
 	encrypted := encryptMessage("Hey there!", key)
 	decrypted, _ := decryptMessage(encrypted, key)
 	fmt.Println(decrypted)
+
+	go getMessagesFromServer(key)
+
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString(byte(0x0A)) // break on newline
+
+		sendMessageToServer(input, key)
+	}
 }
