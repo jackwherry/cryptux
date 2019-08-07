@@ -59,6 +59,7 @@ func decryptMessage(ciphertext []byte, key [32]byte) (string, error) {
 
 func main() {
 	flag.Parse()
+
 	if *passcode == "" {
 		fmt.Println("Usage: ")
 		flag.PrintDefaults()
