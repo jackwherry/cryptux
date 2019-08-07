@@ -81,6 +81,7 @@ func getMessagesFromServer(key [32]byte) {
 			}
 			lastMessage = data
 		}
+		response.Body.Close()
 		time.Sleep(75 * time.Millisecond)
 	}
 }

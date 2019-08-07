@@ -23,7 +23,7 @@ func GetLastMessageEndpoint(w http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	for _, item := range rooms {
 		if item.id == params["id"] {
-			fmt.Fprint(w, item.lastMessage)
+			fmt.Fprint(w, string(item.lastMessage))
 			fmt.Println(item.lastMessage)
 			return
 		}
