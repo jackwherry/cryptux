@@ -22,8 +22,7 @@ var room = flag.String("id", "", "unique ID for your chat room")
 var passcode = flag.String("pass", "", "secret key for chat encryption (also must be the same as the other users)")
 var server = flag.String("server", "v.snazz.xyz", "hostname or IP address of cryptux server")
 
-// using a single salt for all applications allows for known-plaintext attacks, right?
-// TODO: Figure out how to mitigate this risk (does it matter?)
+// see README for reasoning
 var salt = []byte(`js>ru/F7cug(3<-/,e~?"c#aUfq3Dqa!hX7G<Mf;4)~h<'U?bfW899gdE:3hxduK`)
 
 // generateKey returns a deterministic key for the session
@@ -69,6 +68,7 @@ func getMessagesFromServer(key [32]byte) {
 		response, err := http.Get("http://" + *server + ":8000/rooms/" + *room)
 		if err != nil {
 			fmt.Printf("The HTTP request to the server failed: %s \n ", err)
+			os.Exit(1)
 		} else {
 			data, _ := ioutil.ReadAll(response.Body)
 			decrypted, err := decryptMessage(data, key)
@@ -82,7 +82,7 @@ func getMessagesFromServer(key [32]byte) {
 			lastMessage = data
 		}
 		response.Body.Close()
-		time.Sleep(75 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -97,30 +97,23 @@ func sendMessageToServer(message string, key [32]byte) {
 
 func main() {
 	flag.Parse()
-
 	if *passcode == "" {
 		fmt.Println("Usage: ")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-
-	fmt.Println("Welcome to cryptux.")
 	if *room == "" {
 		fmt.Println("Usage: ")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+	fmt.Printf("You are connected to %s on %s with the password %s\n\n\n", *room, *server, *passcode)
 	key := generateKey(*passcode)
-	encrypted := encryptMessage("Hey there!", key)
-	decrypted, _ := decryptMessage(encrypted, key)
-	fmt.Println(decrypted)
 
 	go getMessagesFromServer(key)
-
 	for {
 		reader := bufio.NewReader(os.Stdin)
 		input, _ := reader.ReadString(byte(0x0A)) // break on newline
-
 		sendMessageToServer(input, key)
 	}
 }

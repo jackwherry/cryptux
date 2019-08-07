@@ -24,7 +24,6 @@ func GetLastMessageEndpoint(w http.ResponseWriter, req *http.Request) {
 	for _, item := range rooms {
 		if item.id == params["id"] {
 			fmt.Fprint(w, string(item.lastMessage))
-			fmt.Println(item.lastMessage)
 			return
 		}
 	}
@@ -40,6 +39,9 @@ func PostMessageOrCreateRoom(w http.ResponseWriter, req *http.Request) {
 			lastMessage, err := ioutil.ReadAll(req.Body)
 			if err != nil {
 				log.Println(err, "room existed")
+			}
+			if len(lastMessage) >= 250 {
+				return
 			}
 			var room Room
 			room.id = item.id
