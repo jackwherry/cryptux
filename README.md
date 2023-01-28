@@ -21,7 +21,7 @@ It defaults to `v.snazz.xyz` as its server, although you can specify `-server=wh
 
 To set up your very own server, do so as follows:
 ```shell
-$ go get github.com/jack-the-coder/cryptux/server
+$ go get github.com/jackwherry/cryptux/server
 $ cd $GOPATH/bin
 $ ./server
 ```
